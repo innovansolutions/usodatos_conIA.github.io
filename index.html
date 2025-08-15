@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Predicción de Edad con IA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Sube tu selfie para predecir tu edad</h1>
+    <input type="file" id="foto" accept="image/*">
+    <button onclick="predecirEdad()">Predecir Edad</button>
+    <canvas id="grafica"></canvas>
+
+    <script>
+        let edades = [];
+
+        async function predecirEdad() {
+            const foto = document.getElementById('foto').files[0];
+            const formData = new FormData();
+            formData.append('image', foto);
+
+            // Usamos una API gratuita de reconocimiento facial (ej. DeepAI)
+            const respuesta = await fetch('https://api.deepai.org/api/age-detector', {
+                method: 'POST',
+                headers: { 'api-key': 'TU_API_KEY_GRATIS' }, // Regístrate en DeepAI para una key
+                body: formData
+            });
+            const datos = await respuesta.json();
+            const edad = datos.output.age; // Ajusta según la API que uses
+
+            edades.push(edad);
+            actualizarGrafica();
+        }
+
+        function actualizarGrafica() {
+            const ctx = document.getElementById('grafica').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: edades.map((_, i) => `Alumno ${i + 1}`),
+                    datasets: [{
+                        label: 'Edades Predichas',
+                        data: edades,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>
