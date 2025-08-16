@@ -3,49 +3,116 @@
 <head>
     <title>Predicción de Edad con IA</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Agrega Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
 </head>
 <body>
     <h1>Sube tu selfie para predecir tu edad</h1>
     <input type="file" id="foto" accept="image/*">
     <button onclick="predecirEdad()">Predecir Edad</button>
-    <canvas id="grafica"></canvas>
+    <canvas id="grafica" width="400" height="200"></canvas>
 
     <script>
+        // Configuración de Firebase (PEGA TU CONFIGURACIÓN AQUÍ)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_Lxm2lWs4AEI3FusR1OodIn7tDq1hVpA",
+            authDomain: "edad-ia-demo.firebaseapp.com",
+            databaseURL: "https://edad-ia-demo-default-rtdb.firebaseio.com",
+            projectId: "edad-ia-demo",
+            storageBucket: "edad-ia-demo.firebasestorage.app",
+            messagingSenderId: "672943964491",
+            appId: "1:672943964491:web:a81d4e49d84fc268c168ce"
+
+        };
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        
+        // Referencia a la base de datos
+        const edadesRef = database.ref('edades');
         let edades = [];
+
+        // Escuchar cambios en la base de datos
+        edadesRef.on('value', (snapshot) => {
+            edades = [];
+            const data = snapshot.val();
+            
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    edades.push(data[key]);
+                });
+                actualizarGrafica();
+            }
+        });
 
         async function predecirEdad() {
             const foto = document.getElementById('foto').files[0];
             const formData = new FormData();
             formData.append('image', foto);
 
-            // Usamos una API gratuita de reconocimiento facial (ej. DeepAI)
-            const respuesta = await fetch('https://api.deepai.org/api/age-detector', {
-                method: 'POST',
-                headers: { 'api-key': '22ad4ce0-4575-46ca-a566-9afadd06f98a' }, // Regístrate en DeepAI para una key
-                body: formData
-            });
-            const datos = await respuesta.json();
-            const edad = datos.output.age; // Ajusta según la API que uses
-
-            edades.push(edad);
-            actualizarGrafica();
+            try {
+                const respuesta = await fetch('https://api.deepai.org/api/age-detector', {
+                    method: 'POST',
+                    headers: { 
+                        'api-key': '22ad4ce0-4575-46ca-a566-9afadd06f98a'  // <-- Tu key de DeepAI
+                    },
+                    body: formData
+                });
+                
+                const datos = await respuesta.json();
+                const edad = datos.output.age;
+                
+                // Guardar en Firebase
+                edadesRef.push(edad);
+                
+            } catch (error) {
+                console.error("Error:", error);
+                alert("¡Oops! Algo salió mal. Intenta con otra foto.");
+            }
         }
 
         function actualizarGrafica() {
             const ctx = document.getElementById('grafica').getContext('2d');
-            new Chart(ctx, {
+            
+            // Destruir gráfica anterior si existe
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+            
+            window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: edades.map((_, i) => `Alumno ${i + 1}`),
+                    labels: edades.map((_, i) => `Persona ${i + 1}`),
                     datasets: [{
                         label: 'Edades Predichas',
                         data: edades,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
                     }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Edad'
+                            }
+                        }
+                    }
                 }
             });
         }
     </script>
 </body>
+</html>
+    </script>
+</body>
 
 </html>
+
